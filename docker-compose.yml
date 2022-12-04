@@ -38,8 +38,8 @@ services:
     
 volumes:
   mongodb:
-    external: true
+    bridge: local
     
 networks:
   springappnetwork:
-    external: true
+   
