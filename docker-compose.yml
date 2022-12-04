@@ -38,7 +38,7 @@ services:
     
 volumes:
   mongodb:
-    bridge: local
+    driver: local
     
 networks:
   springappnetwork:
