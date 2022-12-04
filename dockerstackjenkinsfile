@@ -1,0 +1,32 @@
+node{
+     def buildNumber = BUILD_NUMBER
+    def mavenhome=tool name:"maven3.8.6"
+stage('CheckOutCode'){
+    git credentialsId: 'a3235c1c-2441-404c-9291-5f5efd6810fa', url: 'https://github.com/css-august/spring-boot-mongo-docker.git'
+}
+stage('build'){
+    sh "${mavenhome}/bin/mvn clean package"
+}	
+    stage("dockerbuild"){
+    sh "docker build -t chavavenky/spring:${buildNumber} ."
+    }
+    stage('pushimage'){
+        withCredentials([string(credentialsId: 'docker_hub', variable: 'password')]) {
+        sh "docker login -u chavavenky -p ${password}"
+    }
+    sh "docker push chavavenky/spring:${buildNumber}"    
+    }
+    stage("Remove Local Image"){
+        sh "docker rmi -f chavavenky/spring:${buildNumber}"
+    }
+    
+    stage("update image tag in dockercomposefile"){
+     sh "sed -i 's/VERSION/${buildNumber}/g' docker-compose.yml"
+    }
+    stage('deployapplicationintodocker'){
+        sshagent(['ssh_agent1']) {
+            sh "scp -o StrictHostKeyChecking=no docker-compose.yml ubuntu@172.31.42.87:/home/ubuntu"
+            sh "ssh ubuntu@172.31.42.87 docker stack deploy --compose-file docker-compose.yml springapp"
+}
+    }
+}
